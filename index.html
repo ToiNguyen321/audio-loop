@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loop Audio with Speed Control</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        text-align: center;
+      }
+
+      .container {
+        background-color: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 40px;
+        border-radius: 20px;
+        width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 30px;
+        color: #ffffff;
+      }
+
+      .custom-select {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .select-selected {
+        background-color: #fdfdfd;
+        color: #0a0a0a;
+        padding: 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .select-selected::after {
+        content: "\25BC";
+        font-size: 12px;
+        color: #0a0a0a;
+      }
+
+      .select-items {
+        position: absolute;
+        background-color: #455971;
+        color: #fff;
+        width: 100%;
+        border-radius: 10px;
+        margin-top: 5px;
+        z-index: 99;
+        display: none;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        max-height: 250px; /* Giới hạn chiều cao */
+        overflow-y: auto; /* Hiển thị thanh cuộn dọc */
+        scrollbar-width: none; /* Ẩn scrollbar trong Firefox */
+      }
+
+      .select-items::-webkit-scrollbar {
+        display: none; /* Ẩn scrollbar trong Chrome, Edge và Safari */
+      }
+
+      .select-items div {
+        padding: 10px 15px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Thêm đường phân tách */
+      }
+
+      .select-items div:last-child {
+        border-bottom: none; /* Loại bỏ đường phân tách dưới mục cuối cùng */
+      }
+
+      .select-items div:hover {
+        background-color: rgba(
+          255,
+          255,
+          255,
+          0.3
+        ); /* Làm nổi bật mục khi hover */
+        transform: scale(1.02); /* Tăng kích thước nhẹ khi hover */
+        border-radius: 8px; /* Bo góc khi hover */
+      }
+
+      .select-selected.active + .select-items {
+        display: block;
+      }
+
+      audio {
+        width: 100%;
+        margin: 20px 0;
+        border-radius: 15px;
+        background: transparent;
+      }
+
+      .speed-control {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 15px;
+        margin-top: 25px;
+      }
+
+      .speed-control label {
+        display: block;
+        margin-bottom: 15px;
+        font-size: 18px;
+        font-weight: 500;
+      }
+
+      .description {
+        margin-top: 25px;
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.5;
+      }
+
+      .footer {
+        margin-top: 20px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        font-style: italic;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 10px; /* Tăng chiều cao slider */
+        border-radius: 5px;
+        background: linear-gradient(90deg, #2ed1e5, #1f00ff); /* Màu gradient */
+        outline: none;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px; /* Kích thước thumb */
+        height: 20px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #1f00ff;
+        cursor: pointer;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #1f00ff;
+        cursor: pointer;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      /* Mobile Responsive Styles */
+      @media screen and (max-width: 768px) {
+        .container {
+          width: 90%;
+          padding: 20px;
+          margin: 15px;
+        }
+
+        h1 {
+          font-size: 24px;
+          margin-bottom: 20px;
+        }
+
+        .speed-control label {
+          font-size: 16px;
+          margin-bottom: 10px;
+        }
+
+        .description {
+          font-size: 14px;
+          margin-top: 20px;
+        }
+      }
+
+      @media screen and (max-width: 480px) {
+        .container {
+          width: 95%;
+          padding: 15px;
+        }
+
+        h1 {
+          font-size: 20px;
+        }
+
+        audio {
+          margin: 15px 0;
+        }
+
+        .footer {
+          font-size: 12px;
+          margin-top: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Loop Audio Example</h1>
+      <div class="custom-select" id="customSelect">
+        <div class="select-selected">Lesson 7. Ordering food</div>
+        <div class="select-items">
+          <div data-value="audios/Lesson 2. I'm hungry.mp3">
+            Lesson 2. I'm hungry
+          </div>
+          <div data-value="audios/Lesson 3. Do you want something to drink.mp3">
+            Lesson 3. Do you want something to drink
+          </div>
+          <div data-value="audios/Lesson 4. That's too late.mp3">
+            Lesson 4. That's too late
+          </div>
+          <div data-value="audios/Lesson 5. When do you want to go.mp3">
+            Lesson 5. When do you want to go
+          </div>
+          <div data-value="audios/Lesson 6. Choosing a time to meet.mp3">
+            Lesson 6. Choosing a time to meet
+          </div>
+          <div data-value="audios/Lesson 7. Ordering food.mp3">
+            Lesson 7. Ordering food
+          </div>
+        </div>
+      </div>
+
+      <audio id="audioPlayer" controls loop>
+        <source src="./audios/Lesson 7. Ordering food.mp3" type="audio/mp3" />
+        Your browser does not support the audio element.
+      </audio>
+
+      <div class="speed-control">
+        <label for="speedSlider">Speed Control</label>
+        <input
+          id="speedSlider"
+          type="range"
+          min="0.5"
+          max="2"
+          step="0.1"
+          value="1"
+        />
+        <p>Speed: <span id="speedValue">1x</span></p>
+      </div>
+
+      <p class="description">
+        Immerse yourself in seamless audio playback with customizable speed!
+      </p>
+      <div class="footer">Design by Toi Nguyen</div>
+    </div>
+
+    <script>
+      const audioPlayer = document.getElementById("audioPlayer");
+      const speedSlider = document.getElementById("speedSlider");
+      const speedValue = document.getElementById("speedValue");
+
+      speedSlider.addEventListener("input", function () {
+        audioPlayer.playbackRate = speedSlider.value;
+        speedValue.textContent = `${speedSlider.value}x`;
+      });
+
+      const customSelect = document.getElementById("customSelect");
+      const selected = customSelect.querySelector(".select-selected");
+      const items = customSelect.querySelector(".select-items");
+
+      selected.addEventListener("click", function () {
+        this.classList.toggle("active");
+      });
+
+      items.addEventListener("click", function (event) {
+        const target = event.target;
+        if (target.tagName === "DIV") {
+          const value = target.dataset.value;
+          audioPlayer.src = value;
+          audioPlayer.load();
+          audioPlayer.play();
+          selected.textContent = target.textContent;
+          selected.classList.remove("active");
+        }
+      });
+
+      window.addEventListener("click", function (e) {
+        if (!customSelect.contains(e.target)) {
+          selected.classList.remove("active");
+        }
+      });
+    </script>
+  </body>
+</html>
